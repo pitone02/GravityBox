@@ -290,14 +290,14 @@
     <string name="pref_auto_switch_qs_summary">I QuickSettings saranno visibili automaticamente aprendo la barra delle notifiche, se non sono già presenti notifiche</string>
 
     <!-- Quick pulldown -->
-    <string name="pref_quick_pulldown_title">Visualizzaione rapida</string>
+    <string name="pref_quick_pulldown_title">Visualizzazione rapida</string>
     <string name="pref_quick_pulldown_summary">Trascinando un bordo dello schermo appariranno direttamente i QuickSettings</string>
     <string name="quick_pulldown_off">Spento</string>
     <string name="quick_pulldown_right">Destra</string>
     <string name="quick_pulldown_left">Sinistra</string>
 
     <!-- Disable volume rocker wake -->
-    <string name="pref_volume_rocker_wake_disable_title">Disable volume rocker wake</string>
+    <string name="pref_volume_rocker_wake_disable_title">Disabilita sblocco schermo con tasti volume</string>
     <string name="pref_volume_rocker_wake_disable_summary">Per modelli come Jiayu G3s,G4 in cui i tasti volume accendono lo schermo</string>
 
     <!-- Statusbar colors category -->
