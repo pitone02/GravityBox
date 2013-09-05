@@ -4,12 +4,16 @@ import java.util.List;
 
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningAppProcessInfo;
+import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ResolveInfo;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Resources;
+import android.os.Build;
 import android.os.Handler;
 import android.os.PowerManager;
 import android.os.Process;
@@ -19,6 +23,7 @@ import android.view.KeyEvent;
 import android.view.ViewConfiguration;
 import android.widget.Toast;
 import de.robv.android.xposed.XC_MethodHook;
+import de.robv.android.xposed.XC_MethodReplacement;
 import de.robv.android.xposed.XSharedPreferences;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
@@ -31,10 +36,13 @@ public class ModHwKeys {
     private static final String CLASS_WINDOW_STATE = "android.view.WindowManagerPolicy$WindowState";
     private static final String CLASS_WINDOW_MANAGER_FUNCS = "android.view.WindowManagerPolicy.WindowManagerFuncs";
     private static final String CLASS_IWINDOW_MANAGER = "android.view.IWindowManager";
+    private static final String CLASS_LOCAL_POWER_MANAGER = "android.os.LocalPowerManager";
     private static final boolean DEBUG = false;
 
     private static final int FLAG_WAKE = 0x00000001;
     private static final int FLAG_WAKE_DROPPED = 0x00000002;
+
+    private static final String SEPARATOR = "#C3C0#";
 
     private static Class<?> classActivityManagerNative;
     private static Object mPhoneWindowManager;
@@ -43,16 +51,20 @@ public class ModHwKeys {
     private static String mStrAppKilled;
     private static String mStrNothingToKill;
     private static String mStrNoPrevApp;
+    private static String mStrCustomAppNone;
+    private static String mStrCustomAppMissing;
     private static boolean mIsMenuLongPressed = false;
     private static boolean mIsMenuDoubleTap = false;
     private static boolean mIsBackLongPressed = false;
     private static int mMenuLongpressAction = 0;
     private static int mMenuDoubletapAction = 0;
+    private static int mHomeLongpressAction = 0;
     private static int mBackLongpressAction = 0;
     private static int mDoubletapSpeed = GravityBoxSettings.HWKEY_DOUBLETAP_SPEED_DEFAULT;
     private static int mKillDelay = GravityBoxSettings.HWKEY_KILL_DELAY_DEFAULT;
     private static boolean mVolumeRockerWakeDisabled = false;
     private static boolean mHwKeysEnabled = true;
+    private static XSharedPreferences mPrefs;
 
     private static void log(String message) {
         XposedBridge.log(TAG + ": " + message);
@@ -60,12 +72,14 @@ public class ModHwKeys {
 
     private static enum HwKey {
         MENU,
+        HOME,
         BACK
     }
 
     private static enum HwKeyTrigger {
         MENU_LONGPRESS,
         MENU_DOUBLETAP,
+        HOME_LONGPRESS,
         BACK_LONGPRESS
     }
 
@@ -87,6 +101,9 @@ public class ModHwKeys {
             } else if (action.equals(GravityBoxSettings.ACTION_PREF_HWKEY_MENU_DOUBLETAP_CHANGED)) {
                 mMenuDoubletapAction = value;
                 log("Menu double-tap action set to: " + value);
+            } else if (action.equals(GravityBoxSettings.ACTION_PREF_HWKEY_HOME_LONGPRESS_CHANGED)) {
+                mHomeLongpressAction = value;
+                log("Home long-press action set to: " + value);
             } else if (action.equals(GravityBoxSettings.ACTION_PREF_HWKEY_BACK_LONGPRESS_CHANGED)) {
                 mBackLongpressAction = value;
                 log("Back long-press action set to: " + value);
@@ -109,11 +126,14 @@ public class ModHwKeys {
 
     public static void initZygote(final XSharedPreferences prefs) {
         try {
+            mPrefs = prefs;
             try {
                 mMenuLongpressAction = Integer.valueOf(
                         prefs.getString(GravityBoxSettings.PREF_KEY_HWKEY_MENU_LONGPRESS, "0"));
                 mMenuDoubletapAction = Integer.valueOf(
                         prefs.getString(GravityBoxSettings.PREF_KEY_HWKEY_MENU_DOUBLETAP, "0"));
+                mHomeLongpressAction = Integer.valueOf(
+                        prefs.getString(GravityBoxSettings.PREF_KEY_HWKEY_HOME_LONGPRESS, "0"));
                 mBackLongpressAction = Integer.valueOf(
                         prefs.getString(GravityBoxSettings.PREF_KEY_HWKEY_BACK_LONGPRESS, "0"));
                 mDoubletapSpeed = Integer.valueOf(
@@ -131,33 +151,14 @@ public class ModHwKeys {
             final Class<?> classPhoneWindowManager = XposedHelpers.findClass(CLASS_PHONE_WINDOW_MANAGER, null);
             classActivityManagerNative = XposedHelpers.findClass(CLASS_ACTIVITY_MANAGER_NATIVE, null);
 
-            XposedHelpers.findAndHookMethod(classPhoneWindowManager, "init",
-                    Context.class, CLASS_IWINDOW_MANAGER, CLASS_WINDOW_MANAGER_FUNCS, new XC_MethodHook() {
-
-                @Override
-                protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                    mPhoneWindowManager = param.thisObject;
-                    mContext = (Context) XposedHelpers.getObjectField(mPhoneWindowManager, "mContext");
-                    mGbContext = mContext.createPackageContext(GravityBox.PACKAGE_NAME, Context.CONTEXT_IGNORE_SECURITY);
-
-                    Resources res = mGbContext.getResources();
-                    mStrAppKilled = res.getString(R.string.app_killed);
-                    mStrNothingToKill = res.getString(R.string.nothing_to_kill);
-                    mStrNoPrevApp = res.getString(R.string.no_previous_app_found);
-
-                    IntentFilter intentFilter = new IntentFilter();
-                    intentFilter.addAction(GravityBoxSettings.ACTION_PREF_HWKEY_MENU_LONGPRESS_CHANGED);
-                    intentFilter.addAction(GravityBoxSettings.ACTION_PREF_HWKEY_MENU_DOUBLETAP_CHANGED);
-                    intentFilter.addAction(GravityBoxSettings.ACTION_PREF_HWKEY_BACK_LONGPRESS_CHANGED);
-                    intentFilter.addAction(GravityBoxSettings.ACTION_PREF_HWKEY_DOUBLETAP_SPEED_CHANGED);
-                    intentFilter.addAction(GravityBoxSettings.ACTION_PREF_HWKEY_KILL_DELAY_CHANGED);
-                    intentFilter.addAction(GravityBoxSettings.ACTION_PREF_VOLUME_ROCKER_WAKE_CHANGED);
-                    intentFilter.addAction(GravityBoxSettings.ACTION_PREF_PIE_CHANGED);
-                    mContext.registerReceiver(mBroadcastReceiver, intentFilter);
-
-                    log("Phone window manager initialized");
-                }
-            });
+            if (Build.VERSION.SDK_INT > 16) {
+                XposedHelpers.findAndHookMethod(classPhoneWindowManager, "init",
+                    Context.class, CLASS_IWINDOW_MANAGER, CLASS_WINDOW_MANAGER_FUNCS, phoneWindowManagerInitHook);
+            } else {
+                XposedHelpers.findAndHookMethod(classPhoneWindowManager, "init",
+                        Context.class, CLASS_IWINDOW_MANAGER, CLASS_WINDOW_MANAGER_FUNCS, 
+                        CLASS_LOCAL_POWER_MANAGER, phoneWindowManagerInitHook);
+            }
 
             XposedHelpers.findAndHookMethod(classPhoneWindowManager, "interceptKeyBeforeQueueing", 
                     KeyEvent.class, int.class, boolean.class, new XC_MethodHook(XCallback.PRIORITY_HIGHEST) {
@@ -262,24 +263,74 @@ public class ModHwKeys {
                 }
             });
 
-            XposedHelpers.findAndHookMethod(classPhoneWindowManager, 
-                    "isWakeKeyWhenScreenOff", int.class, new XC_MethodHook() {
+            XposedHelpers.findAndHookMethod(classPhoneWindowManager, "handleLongPressOnHome", new XC_MethodReplacement() {
 
                 @Override
-                protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                    int keyCode = (Integer) param.args[0];
-                    if (mVolumeRockerWakeDisabled && 
-                            (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN ||
-                             keyCode == KeyEvent.KEYCODE_VOLUME_UP)) {
-                        param.setResult(false);
+                protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
+                    if (!hasAction(HwKey.HOME)) {
+                        XposedBridge.invokeOriginalMethod(param.method, param.thisObject, param.args);
+                        return null;
                     }
+
+                    if (Build.VERSION.SDK_INT > 17) {
+                        XposedHelpers.setBooleanField(param.thisObject, "mHomeConsumed", true);
+                    } else {
+                        XposedHelpers.setBooleanField(param.thisObject, "mHomeLongPressed", true);
+                    }
+                    performAction(HwKeyTrigger.HOME_LONGPRESS);
+
+                    return null;
                 }
             });
 
-        } catch (Exception e) {
-            XposedBridge.log(e);
+            if (Build.VERSION.SDK_INT > 16) {
+                XposedHelpers.findAndHookMethod(classPhoneWindowManager, 
+                        "isWakeKeyWhenScreenOff", int.class, new XC_MethodHook() {
+    
+                    @Override
+                    protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                        int keyCode = (Integer) param.args[0];
+                        if (mVolumeRockerWakeDisabled && 
+                                (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN ||
+                                 keyCode == KeyEvent.KEYCODE_VOLUME_UP)) {
+                            param.setResult(false);
+                        }
+                    }
+                });
+            }
+        } catch (Throwable t) {
+            XposedBridge.log(t);
         }
     }
+
+    private static XC_MethodHook phoneWindowManagerInitHook = new XC_MethodHook() {
+        @Override
+        protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+            mPhoneWindowManager = param.thisObject;
+            mContext = (Context) XposedHelpers.getObjectField(mPhoneWindowManager, "mContext");
+            mGbContext = mContext.createPackageContext(GravityBox.PACKAGE_NAME, Context.CONTEXT_IGNORE_SECURITY);
+    
+            Resources res = mGbContext.getResources();
+            mStrAppKilled = res.getString(R.string.app_killed);
+            mStrNothingToKill = res.getString(R.string.nothing_to_kill);
+            mStrNoPrevApp = res.getString(R.string.no_previous_app_found);
+            mStrCustomAppNone = res.getString(R.string.hwkey_action_custom_app_none);
+            mStrCustomAppMissing = res.getString(R.string.hwkey_action_custom_app_missing);
+    
+            IntentFilter intentFilter = new IntentFilter();
+            intentFilter.addAction(GravityBoxSettings.ACTION_PREF_HWKEY_MENU_LONGPRESS_CHANGED);
+            intentFilter.addAction(GravityBoxSettings.ACTION_PREF_HWKEY_MENU_DOUBLETAP_CHANGED);
+            intentFilter.addAction(GravityBoxSettings.ACTION_PREF_HWKEY_HOME_LONGPRESS_CHANGED);
+            intentFilter.addAction(GravityBoxSettings.ACTION_PREF_HWKEY_BACK_LONGPRESS_CHANGED);
+            intentFilter.addAction(GravityBoxSettings.ACTION_PREF_HWKEY_DOUBLETAP_SPEED_CHANGED);
+            intentFilter.addAction(GravityBoxSettings.ACTION_PREF_HWKEY_KILL_DELAY_CHANGED);
+            intentFilter.addAction(GravityBoxSettings.ACTION_PREF_VOLUME_ROCKER_WAKE_CHANGED);
+            intentFilter.addAction(GravityBoxSettings.ACTION_PREF_PIE_CHANGED);
+            mContext.registerReceiver(mBroadcastReceiver, intentFilter);
+    
+            log("Phone window manager initialized");
+        }
+    };
 
     private static Runnable mMenuLongPress = new Runnable() {
 
@@ -317,6 +368,8 @@ public class ModHwKeys {
                 action = mMenuLongpressAction;
             } else if (keyTrigger == HwKeyTrigger.MENU_DOUBLETAP) {
                 action = mMenuDoubletapAction;
+            } else if (keyTrigger == HwKeyTrigger.HOME_LONGPRESS) {
+                action = mHomeLongpressAction;
             } else if (keyTrigger == HwKeyTrigger.BACK_LONGPRESS) {
                 action = mBackLongpressAction;
             }
@@ -330,6 +383,8 @@ public class ModHwKeys {
         if (key == HwKey.MENU) {
             retVal |= getActionForHwKeyTrigger(HwKeyTrigger.MENU_LONGPRESS) != GravityBoxSettings.HWKEY_ACTION_DEFAULT;
             retVal |= getActionForHwKeyTrigger(HwKeyTrigger.MENU_DOUBLETAP) != GravityBoxSettings.HWKEY_ACTION_DEFAULT;
+        } else if (key == HwKey.HOME) {
+            retVal |= getActionForHwKeyTrigger(HwKeyTrigger.HOME_LONGPRESS) != GravityBoxSettings.HWKEY_ACTION_DEFAULT;
         } else if (key == HwKey.BACK) {
             retVal |= getActionForHwKeyTrigger(HwKeyTrigger.BACK_LONGPRESS) != GravityBoxSettings.HWKEY_ACTION_DEFAULT;
         }
@@ -359,6 +414,10 @@ public class ModHwKeys {
             killForegroundApp();
         } else if (action == GravityBoxSettings.HWKEY_ACTION_SLEEP) {
             goToSleep();
+        } else if (action == GravityBoxSettings.HWKEY_ACTION_RECENT_APPS) {
+            toggleRecentApps();
+        } else if (action == GravityBoxSettings.HWKEY_ACTION_CUSTOM_APP) {
+            launchCustomApp();
         }
     }
 
@@ -484,5 +543,52 @@ public class ModHwKeys {
         } catch (Exception e) {
             XposedBridge.log(e);
         }
+    }
+
+    private static void toggleRecentApps() {
+        try {
+            if (Build.VERSION.SDK_INT > 17) {
+                XposedHelpers.callMethod(mPhoneWindowManager, "toggleRecentApps");
+            } else {
+                Object statusbar = XposedHelpers.callMethod(mPhoneWindowManager, "getStatusBarService");
+                if (statusbar != null) {
+                    XposedHelpers.callMethod(statusbar, "toggleRecentApps");
+                }
+            }
+        } catch (Throwable t) {
+            XposedBridge.log(t);
+        }
+    }
+
+    private static void launchCustomApp() {
+        Handler handler = (Handler) XposedHelpers.getObjectField(mPhoneWindowManager, "mHandler");
+        if (handler == null) return;
+        mPrefs.reload();
+
+        handler.post(
+            new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        String appInfo = mPrefs.getString(GravityBoxSettings.PREF_KEY_HWKEY_CUSTOM_APP, null);
+                        if (appInfo == null) {
+                            Toast.makeText(mContext, mStrCustomAppNone, Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        String[] splitValue = appInfo.split(SEPARATOR);
+                        ComponentName cn = new ComponentName(splitValue[0], splitValue[1]);
+                        Intent i = new Intent();
+                        i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        i.setComponent(cn);
+                        mContext.startActivity(i);
+                    } catch (ActivityNotFoundException e) {
+                        Toast.makeText(mContext, mStrCustomAppMissing, Toast.LENGTH_SHORT).show();
+                    } catch (Throwable t) {
+                        XposedBridge.log(t);
+                    }
+                }
+            }
+        );
     }
 }

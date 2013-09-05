@@ -17,10 +17,12 @@ import com.ceco.gm2.gravitybox.quicksettings.GpsTile;
 import com.ceco.gm2.gravitybox.quicksettings.NetworkModeTile;
 import com.ceco.gm2.gravitybox.quicksettings.QuickAppTile;
 import com.ceco.gm2.gravitybox.quicksettings.QuickRecordTile;
+import com.ceco.gm2.gravitybox.quicksettings.RingerModeTile;
 import com.ceco.gm2.gravitybox.quicksettings.SleepTile;
 import com.ceco.gm2.gravitybox.quicksettings.TorchTile;
 import com.ceco.gm2.gravitybox.quicksettings.GravityBoxTile;
 import com.ceco.gm2.gravitybox.quicksettings.SyncTile;
+import com.ceco.gm2.gravitybox.quicksettings.VolumeTile;
 import com.ceco.gm2.gravitybox.quicksettings.WifiApTile;
 
 import android.content.BroadcastReceiver;
@@ -29,7 +31,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Configuration;
 import android.content.res.Resources;
-import android.content.res.XResources;
 import android.os.Build;
 import android.os.IBinder;
 import android.provider.Settings;
@@ -109,10 +110,12 @@ public class ModQuickSettings {
             R.id.network_mode_tileview,
             R.id.sleep_tileview,
             R.id.quickapp_tileview,
-            R.id.quickrecord_tileview
+            R.id.quickrecord_tileview,
+            R.id.volume_tileview
         ));
         if (!Utils.isMtkDevice()) {
             mCustomGbTileKeys.add(R.id.gps_tileview);
+            mCustomGbTileKeys.add(R.id.ringer_mode_tileview);
         }
 
         Map<String, Integer> tmpMap = new HashMap<String, Integer>();
@@ -323,8 +326,8 @@ public class ModQuickSettings {
             if (!Utils.isMtkDevice()) {
                 resparam.res.setReplacement(PACKAGE_NAME, "bool", "quick_settings_show_rotation_lock", true);
             }
-        } catch (Exception e) {
-            XposedBridge.log(e);
+        } catch (Throwable t) {
+            XposedBridge.log(t);
         }
     }
 
@@ -429,8 +432,8 @@ public class ModQuickSettings {
                     }
                 }
             });
-        } catch (Exception e) {
-            XposedBridge.log(e);
+        } catch (Throwable t) {
+            XposedBridge.log(t);
         }
     }
 
@@ -471,49 +474,61 @@ public class ModQuickSettings {
         protected void afterHookedMethod(final MethodHookParam param) throws Throwable {
             log("about to add tiles");
 
-            LayoutInflater inflater = (LayoutInflater) param.args[1];
+            try {
+                LayoutInflater inflater = (LayoutInflater) param.args[1];
 
-            mTiles = new ArrayList<AQuickSettingsTile>();
+                mTiles = new ArrayList<AQuickSettingsTile>();
 
-            if (!Utils.isMtkDevice()) {
-                GpsTile gpsTile = new GpsTile(mContext, mGbContext, mStatusBar, mPanelBar);
-                gpsTile.setupQuickSettingsTile(mContainerView, inflater);
-                mTiles.add(gpsTile);
+                if (!Utils.isMtkDevice()) {
+                    GpsTile gpsTile = new GpsTile(mContext, mGbContext, mStatusBar, mPanelBar);
+                    gpsTile.setupQuickSettingsTile(mContainerView, inflater);
+                    mTiles.add(gpsTile);
+
+                    RingerModeTile rmTile = new RingerModeTile(mContext, mGbContext, mStatusBar, mPanelBar);
+                    rmTile.setupQuickSettingsTile(mContainerView, inflater);
+                    mTiles.add(rmTile);
+                }
+
+                VolumeTile volTile = new VolumeTile(mContext, mGbContext, mStatusBar, mPanelBar);
+                volTile.setupQuickSettingsTile(mContainerView, inflater);
+                mTiles.add(volTile);
+
+                NetworkModeTile nmTile = new NetworkModeTile(mContext, mGbContext, mStatusBar, mPanelBar);
+                nmTile.setupQuickSettingsTile(mContainerView, inflater);
+                mTiles.add(nmTile);
+
+                SyncTile syncTile = new SyncTile(mContext, mGbContext, mStatusBar, mPanelBar);
+                syncTile.setupQuickSettingsTile(mContainerView, inflater);
+                mTiles.add(syncTile);
+
+                WifiApTile wifiApTile = new WifiApTile(mContext, mGbContext, mStatusBar, mPanelBar);
+                wifiApTile.setupQuickSettingsTile(mContainerView, inflater);
+                mTiles.add(wifiApTile);
+
+                TorchTile torchTile = new TorchTile(mContext, mGbContext, mStatusBar, mPanelBar);
+                torchTile.setupQuickSettingsTile(mContainerView, inflater);
+                mTiles.add(torchTile);
+
+                SleepTile sleepTile = new SleepTile(mContext, mGbContext, mStatusBar, mPanelBar);
+                sleepTile.setupQuickSettingsTile(mContainerView, inflater);
+                mTiles.add(sleepTile);
+
+                QuickRecordTile qrTile = new QuickRecordTile(mContext, mGbContext, mStatusBar, mPanelBar);
+                qrTile.setupQuickSettingsTile(mContainerView, inflater);
+                mTiles.add(qrTile);
+
+                QuickAppTile qAppTile = new QuickAppTile(mContext, mGbContext, mStatusBar, mPanelBar);
+                qAppTile.setupQuickSettingsTile(mContainerView, inflater);
+                mTiles.add(qAppTile);
+
+                GravityBoxTile gbTile = new GravityBoxTile(mContext, mGbContext, mStatusBar, mPanelBar);
+                gbTile.setupQuickSettingsTile(mContainerView, inflater);
+                mTiles.add(gbTile);
+
+                updateTileVisibility();
+            } catch (Throwable t) {
+                XposedBridge.log(t);
             }
-
-            NetworkModeTile nmTile = new NetworkModeTile(mContext, mGbContext, mStatusBar, mPanelBar);
-            nmTile.setupQuickSettingsTile(mContainerView, inflater);
-            mTiles.add(nmTile);
-
-            SyncTile syncTile = new SyncTile(mContext, mGbContext, mStatusBar, mPanelBar);
-            syncTile.setupQuickSettingsTile(mContainerView, inflater);
-            mTiles.add(syncTile);
-
-            WifiApTile wifiApTile = new WifiApTile(mContext, mGbContext, mStatusBar, mPanelBar);
-            wifiApTile.setupQuickSettingsTile(mContainerView, inflater);
-            mTiles.add(wifiApTile);
-
-            TorchTile torchTile = new TorchTile(mContext, mGbContext, mStatusBar, mPanelBar);
-            torchTile.setupQuickSettingsTile(mContainerView, inflater);
-            mTiles.add(torchTile);
-
-            SleepTile sleepTile = new SleepTile(mContext, mGbContext, mStatusBar, mPanelBar);
-            sleepTile.setupQuickSettingsTile(mContainerView, inflater);
-            mTiles.add(sleepTile);
-
-            QuickRecordTile qrTile = new QuickRecordTile(mContext, mGbContext, mStatusBar, mPanelBar);
-            qrTile.setupQuickSettingsTile(mContainerView, inflater);
-            mTiles.add(qrTile);
-
-            QuickAppTile qAppTile = new QuickAppTile(mContext, mGbContext, mStatusBar, mPanelBar);
-            qAppTile.setupQuickSettingsTile(mContainerView, inflater);
-            mTiles.add(qAppTile);
-
-            GravityBoxTile gbTile = new GravityBoxTile(mContext, mGbContext, mStatusBar, mPanelBar);
-            gbTile.setupQuickSettingsTile(mContainerView, inflater);
-            mTiles.add(gbTile);
-
-            updateTileVisibility();
         }
     };
 
@@ -534,62 +549,68 @@ public class ModQuickSettings {
 
         @Override
         protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
-            MotionEvent event = (MotionEvent) param.args[0];
+            try {
+                MotionEvent event = (MotionEvent) param.args[0];
 
-            if (mStatusBar != null && XposedHelpers.getBooleanField(mStatusBar, "mHasFlipSettings")) {
-                boolean shouldFlip = false;
-                boolean okToFlip = XposedHelpers.getBooleanField(param.thisObject, "mOkToFlip");
-                Object notificationData = XposedHelpers.getObjectField(mStatusBar, "mNotificationData");
-                float handleBarHeight = XposedHelpers.getFloatField(param.thisObject, "mHandleBarHeight");
-                Method getExpandedHeight = param.thisObject.getClass().getSuperclass().getMethod("getExpandedHeight");
-                float expandedHeight = (Float) getExpandedHeight.invoke(param.thisObject);
-                final int width = ((View) param.thisObject).getWidth();
-                
-                switch (event.getActionMasked()) {
-                    case MotionEvent.ACTION_DOWN:
-                        okToFlip = (expandedHeight == 0);
-                        XposedHelpers.setBooleanField(param.thisObject, "mOkToFlip", okToFlip);
-                        if (mAutoSwitch && 
-                                (Integer)XposedHelpers.callMethod(notificationData, "size") == 0 &&
-                                !isSimSwitchPanelShowing()) {
-                            shouldFlip = true;
-                        } else if (mQuickPulldown == GravityBoxSettings.QUICK_PULLDOWN_RIGHT
-                                    && (event.getX(0) > (width * 
-                                    (1.0f - STATUS_BAR_SETTINGS_FLIP_PERCENTAGE_RIGHT)))) {
-                            shouldFlip = true;
-                        } else if (mQuickPulldown == GravityBoxSettings.QUICK_PULLDOWN_LEFT
-                                    && (event.getX(0) < (width *
-                                    (1.0f - STATUS_BAR_SETTINGS_FLIP_PERCENTAGE_LEFT)))) {
-                            shouldFlip = true;
-                        }
-                        break;
-                    case MotionEvent.ACTION_POINTER_DOWN:
-                        if (okToFlip) {
-                            float miny = event.getY(0);
-                            float maxy = miny;
-                            for (int i = 1; i < event.getPointerCount(); i++) {
-                                final float y = event.getY(i);
-                                if (y < miny) miny = y;
-                                if (y > maxy) maxy = y;
-                            }
-                            if (maxy - miny < handleBarHeight) {
+                if (mStatusBar != null && XposedHelpers.getBooleanField(mStatusBar, "mHasFlipSettings")) {
+                    boolean shouldFlip = false;
+                    boolean okToFlip = XposedHelpers.getBooleanField(param.thisObject, "mOkToFlip");
+                    Object notificationData = XposedHelpers.getObjectField(mStatusBar, "mNotificationData");
+                    float handleBarHeight = XposedHelpers.getFloatField(param.thisObject, "mHandleBarHeight");
+                    Method getExpandedHeight = param.thisObject.getClass().getSuperclass().getMethod("getExpandedHeight");
+                    float expandedHeight = (Float) getExpandedHeight.invoke(param.thisObject);
+                    final int width = ((View) param.thisObject).getWidth();
+                    
+                    switch (event.getActionMasked()) {
+                        case MotionEvent.ACTION_DOWN:
+                            okToFlip = (expandedHeight == 0);
+                            XposedHelpers.setBooleanField(param.thisObject, "mOkToFlip", okToFlip);
+                            if (mAutoSwitch && 
+                                    (Integer)XposedHelpers.callMethod(notificationData, "size") == 0 &&
+                                    !isSimSwitchPanelShowing()) {
+                                shouldFlip = true;
+                            } else if (mQuickPulldown == GravityBoxSettings.QUICK_PULLDOWN_RIGHT
+                                        && (event.getX(0) > (width * 
+                                        (1.0f - STATUS_BAR_SETTINGS_FLIP_PERCENTAGE_RIGHT)))) {
+                                shouldFlip = true;
+                            } else if (mQuickPulldown == GravityBoxSettings.QUICK_PULLDOWN_LEFT
+                                        && (event.getX(0) < (width *
+                                        (1.0f - STATUS_BAR_SETTINGS_FLIP_PERCENTAGE_LEFT)))) {
                                 shouldFlip = true;
                             }
-                        }
-                        break;
-                }
-                if (okToFlip && shouldFlip) {
-                    if (expandedHeight < handleBarHeight) {
-                        XposedHelpers.callMethod(mStatusBar, "switchToSettings");
-                    } else {
-                        XposedHelpers.callMethod(mStatusBar, "flipToSettings");
+                            break;
+                        case MotionEvent.ACTION_POINTER_DOWN:
+                            if (okToFlip) {
+                                float miny = event.getY(0);
+                                float maxy = miny;
+                                for (int i = 1; i < event.getPointerCount(); i++) {
+                                    final float y = event.getY(i);
+                                    if (y < miny) miny = y;
+                                    if (y > maxy) maxy = y;
+                                }
+                                if (maxy - miny < handleBarHeight) {
+                                    shouldFlip = true;
+                                }
+                            }
+                            break;
                     }
-                    okToFlip = false;
+                    if (okToFlip && shouldFlip) {
+                        if (expandedHeight < handleBarHeight) {
+                            XposedHelpers.callMethod(mStatusBar, "switchToSettings");
+                        } else {
+                            XposedHelpers.callMethod(mStatusBar, "flipToSettings");
+                        }
+                        okToFlip = false;
+                    }
                 }
-            }
 
-            View handleView = (View) XposedHelpers.getObjectField(param.thisObject, "mHandleView"); 
-            return handleView.dispatchTouchEvent(event);
+                View handleView = (View) XposedHelpers.getObjectField(param.thisObject, "mHandleView"); 
+                return handleView.dispatchTouchEvent(event);
+            } catch (Throwable t) {
+                XposedBridge.invokeOriginalMethod(param.method, param.thisObject, param.args);
+                XposedBridge.log(t);
+                return null;
+            }
         }
     };
 
@@ -700,9 +721,9 @@ public class ModQuickSettings {
                 fPrivateFlags.setInt(thisView, privateFlags);
     
                 return null;
-            } catch (Exception e) {
+            } catch (Throwable t) {
                 // fallback to original method in case of problems
-                XposedBridge.log(e);
+                XposedBridge.log(t);
                 XposedBridge.invokeOriginalMethod(param.method, param.thisObject, param.args);
                 return null;
             }
@@ -726,8 +747,8 @@ public class ModQuickSettings {
                     ((View)param.args[0]).setTag(mAospTileTags.get("user_textview"));
                 }
             });
-        } catch (Exception e) {
-            XposedBridge.log(e);
+        } catch (Throwable t) {
+            XposedBridge.log(t);
         }
 
         try {
@@ -738,8 +759,8 @@ public class ModQuickSettings {
                     ((View)param.args[0]).setTag(mAospTileTags.get("brightness_textview"));
                 }
             });
-        } catch (Exception e) {
-            XposedBridge.log(e);
+        } catch (Throwable t) {
+            XposedBridge.log(t);
         }
 
         try {
@@ -750,8 +771,8 @@ public class ModQuickSettings {
                     ((View)param.args[0]).setTag(mAospTileTags.get("settings"));
                 }
             });
-        } catch (Exception e) {
-            XposedBridge.log(e);
+        } catch (Throwable t) {
+            XposedBridge.log(t);
         }
 
         try {
@@ -762,8 +783,8 @@ public class ModQuickSettings {
                     ((View)param.args[0]).setTag(mAospTileTags.get("wifi_textview"));
                 }
             });
-        } catch (Exception e) {
-            XposedBridge.log(e);
+        } catch (Throwable t) {
+            XposedBridge.log(t);
         }
 
         try {
@@ -774,8 +795,8 @@ public class ModQuickSettings {
                     ((View)param.args[0]).setTag(mAospTileTags.get("rssi_textview"));
                 }
             });
-        } catch (Exception e) {
-            XposedBridge.log(e);
+        } catch (Throwable t) {
+            XposedBridge.log(t);
         }
 
         try {
@@ -786,8 +807,8 @@ public class ModQuickSettings {
                     ((View)param.args[0]).setTag(mAospTileTags.get("auto_rotate_textview"));
                 }
             });
-        } catch (Exception e) {
-            XposedBridge.log(e);
+        } catch (Throwable t) {
+            XposedBridge.log(t);
         }
 
         try {
@@ -798,8 +819,8 @@ public class ModQuickSettings {
                     ((View)param.args[0]).setTag(mAospTileTags.get("battery_textview"));
                 }
             });
-        } catch (Exception e) {
-            XposedBridge.log(e);
+        } catch (Throwable t) {
+            XposedBridge.log(t);
         }
 
         try {
@@ -810,8 +831,8 @@ public class ModQuickSettings {
                     ((View)param.args[0]).setTag(mAospTileTags.get("airplane_mode_textview"));
                 }
             });
-        } catch (Exception e) {
-            XposedBridge.log(e);
+        } catch (Throwable t) {
+            XposedBridge.log(t);
         }
 
         try {
@@ -822,8 +843,8 @@ public class ModQuickSettings {
                     ((View)param.args[0]).setTag(mAospTileTags.get("bluetooth_textview"));
                 }
             });
-        } catch (Exception e) {
-            XposedBridge.log(e);
+        } catch (Throwable t) {
+            XposedBridge.log(t);
         }
     }
 }

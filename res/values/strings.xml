@@ -29,8 +29,9 @@
     <string name="sim_disable_notifications_summary">\"SIM not inserted\" notifications disabled</string>
 
     <string name="poweroff_advanced_title">Advanced reboot menu</string>
-    <string name="poweroff_advanced_summary">Enables advanced reboot menu with option to reboot to recovery</string>
-    <string name="poweroff_recovery">Recovery</string>    
+    <string name="poweroff_advanced_summary">Enables advanced reboot menu with options to reboot to recovery</string>
+    <string name="poweroff_recovery">Recovery</string>
+    <string name="poweroff_bootloader">Bootloader</string>
 
     <string name="vol_key_cursor_control_title">Volume key cursor control</string>
     <string name="vol_key_cursor_control_summary">Controls cursor using volume keys in text fields</string>
@@ -96,6 +97,7 @@
     <string name="qs_tile_sleep">Sleep</string>
     <string name="qs_tile_quickrecord">Quick Record</string>
     <string name="qs_tile_settings">Settings</string>
+    <string name="qs_tile_volume">Volume</string>
 
     <!-- Color Picker -->
     <string name="dialog_color_picker">Color Picker</string>
@@ -130,8 +132,9 @@
     <string name="about_donate_summary">Donate to me if you think this app is worth it! Also consider donating to rovo89 for his excellent Xposed framework.</string>
 
     <!-- Reboot confirmation -->
-    <string name="reboot_confirm">Your phone will reboot</string>
-    <string name="reboot_confirm_recovery">Your phone will reboot into recovery</string>
+    <string name="reboot_confirm">Your %s will reboot.</string>
+    <string name="reboot_confirm_recovery">Your %s will reboot into recovery.</string>
+    <string name="reboot_confirm_bootloader">Your %s will reboot into bootloader.</string>
 
     <!-- CRT effect screen off animation -->
     <string name="crt_off_effect_title">CRT screen off effect</string>
@@ -363,7 +366,7 @@
     <string name="button_backlight_mode_disable">Disable button backlight</string>
     <string name="button_backlight_mode_always_on">Always on while screen is on</string>
     <string name="pref_button_backlight_notifications_title">Button backlight notifications</string>
-    <string name="pref_button_backlight_notifications_summary">EXPERIMENTAL! Lights up button backlight when there is a notification and screen is off. Use in case your device lacks notification LED.</string>
+    <string name="pref_button_backlight_notifications_summary">EXPERIMENTAL! Blinks button backlight when there is a notification. Use in case your device lacks notification LED. May consume battery.</string>
 
     <!-- Hide navigation bar for pie -->
     <string name="pref_navbar_disable_title">Hide navigation bar</string>
@@ -411,5 +414,62 @@
     <!-- GPS Tile (for non-MTK) -->
     <string name="qs_tile_gps_enabled">GPS on</string>
     <string name="qs_tile_gps_disabled">GPS off</string>
+
+    <!-- Pie control: always show menu button -->
+    <string name="pie_control_menu_title">Always show menu button</string>
+
+    <!-- Ringer mode tile (for non-MTK) -->
+    <string name="qs_tile_ringer_mode">Ringer mode</string>
+
+    <!-- Clock settings category -->
+    <string name="pref_cat_clock_settings_title">Clock settings</string>
+
+    <!-- Clock: hide am/pm -->
+    <string name="pref_clock_ampm_hide_title">Hide AM/PM</string>
+
+    <!-- Clock: hide clock -->
+    <string name="pref_clock_hide_title">Hide clock</string>
+
+    <!-- Pie trigger size -->
+    <string name="pie_control_trigger_size_title">Trigger size</string>
+
+    <!-- Transparency management -->
+    <string name="pref_cat_transparency_manager_title">Transparency management</string>
+    <string name="pref_tm_statusbar_launcher_title">Statusbar transparency for launcher</string>
+    <string name="pref_tm_statusbar_lockscreen_title">Statusbar transparency for lockscreen</string>
+    <string name="pref_tm_navbar_launcher_title">Navbar transparency for launcher</string>
+    <string name="pref_tm_navbar_lockscreen_title">Navbar transparency for lockscreen</string>
+
+    <!-- Hide alarm icon -->
+    <string name="pref_alarm_icon_hide_title">Hide alarm icon</string>
+
+    <!-- Screen dim level -->
+    <string name="pref_screen_dim_level_title">Screen dim level</string>
+    <string name="pref_screen_dim_level_summary">Amount of brightness for dim state - when screen is about to be turned off (requires reboot)</string>
+
+    <!-- Device type -->
+    <string name="device_phone">phone</string>
+    <string name="device_tablet">tablet</string>
+
+    <!-- Brightness preference category -->
+    <string name="pref_cat_brightness_title">Brightness settings</string>
+    <string name="pref_brightness_master_switch_title">Enable brightness settings</string>
+    <string name="pref_brightness_master_switch_summary">Use only in case your device supports standard Android brightness features. Keep disabled if you experience brightness related issues. (requires reboot)</string>
+
+    <!-- HW Key Action: Recent apps -->
+    <string name="hwkey_action_recent_apps">Show recent apps</string>
+
+    <!-- HW Key Action: Home long-press -->
+    <string name="pref_hwkey_home_longpress_title">Home key long-press action</string>
+
+    <!-- HW Key Action: Launch cutom app -->
+    <string name="hwkey_action_custom_app">Launch custom app</string>
+    <string name="pref_hwkey_custom_app_title">Set custom app</string>
+    <string name="hwkey_action_custom_app_none">No custom app assigned!</string>
+    <string name="hwkey_action_custom_app_missing">Custom app not found!</string>
+
+    <!-- Link notification panel clock to Deskclock -->
+    <string name="pref_clock_link_title">Link to DeskClock</string>
+    <string name="pref_clock_link_summary">Links notification panel clock to DeskClock app instead of Date&amp;Time settings</string>
 
 </resources>

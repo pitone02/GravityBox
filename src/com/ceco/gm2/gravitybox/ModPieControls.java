@@ -8,12 +8,11 @@ import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.content.res.Resources;
-import android.content.res.XModuleResources;
-import android.content.res.XResources;
 import android.database.ContentObserver;
 import android.graphics.PixelFormat;
 import android.os.Handler;
 import android.provider.Settings;
+import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,7 +26,6 @@ import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XSharedPreferences;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_InitPackageResources.InitPackageResourcesParam;
 
 public class ModPieControls {
     private static final String TAG = "ModPieController";
@@ -48,6 +46,7 @@ public class ModPieControls {
     public static final String SETTING_PIE_SEARCH = "pie_search";
     public static final String SETTING_PIE_GRAVITY = "pie_gravity";
     public static final String SETTING_PIE_SIZE = "pie_size";
+    public static final String SETTING_PIE_TRIGGER_SIZE = "pie_trigger_size";
 
     private static PieController mPieController;
     private static PieLayout mPieContainer;
@@ -58,6 +57,7 @@ public class ModPieControls {
     private static WindowManager mWindowManager;
     private static PieSettingsObserver mSettingsObserver;
     private static boolean mShowMenuItem;
+    private static boolean mAlwaysShowMenuItem;
 
     private static void log(String message) {
         XposedBridge.log(TAG + ": " + message);
@@ -93,6 +93,10 @@ public class ModPieControls {
                     }
                     Settings.System.putInt(cr, SETTING_PIE_GRAVITY, tslots);
                 }
+                if (intent.hasExtra(GravityBoxSettings.EXTRA_PIE_TRIGGER_SIZE)) {
+                    int size = intent.getIntExtra(GravityBoxSettings.EXTRA_PIE_TRIGGER_SIZE, 5);
+                    Settings.System.putInt(cr, SETTING_PIE_TRIGGER_SIZE, size);
+                }
                 if (intent.hasExtra(GravityBoxSettings.EXTRA_PIE_SIZE)) {
                     float size = (float) intent.getIntExtra(
                             GravityBoxSettings.EXTRA_PIE_SIZE, 1000) / 1000f;
@@ -102,7 +106,14 @@ public class ModPieControls {
                     mShowMenuItem = intent.getBooleanExtra(
                             GravityBoxSettings.EXTRA_PIE_HWKEYS_DISABLE, false);
                     if (mPieController != null) {
-                        mPieController.setMenuVisibility(mShowMenuItem);
+                        mPieController.setMenuVisibility(mShowMenuItem | mAlwaysShowMenuItem);
+                    }
+                }
+                if (intent.hasExtra(GravityBoxSettings.EXTRA_PIE_MENU)) {
+                    mAlwaysShowMenuItem = intent.getBooleanExtra(
+                            GravityBoxSettings.EXTRA_PIE_MENU, false);
+                    if (mPieController != null) {
+                        mPieController.setMenuVisibility(mShowMenuItem | mAlwaysShowMenuItem);
                     }
                 }
             }
@@ -186,6 +197,7 @@ public class ModPieControls {
             final Class<?> phoneStatusBarClass = XposedHelpers.findClass(CLASS_PHONE_STATUSBAR, classLoader);
 
             mShowMenuItem = prefs.getBoolean(GravityBoxSettings.PREF_KEY_HWKEYS_DISABLE, false);
+            mAlwaysShowMenuItem = prefs.getBoolean(GravityBoxSettings.PREF_KEY_PIE_CONTROL_MENU, false);
 
             XposedHelpers.findAndHookMethod(baseStatusBarClass, "start", new XC_MethodHook() {
 
@@ -194,7 +206,7 @@ public class ModPieControls {
                     log("BaseStatusBar starting...");
                     mContext = (Context) XposedHelpers.getObjectField(param.thisObject, "mContext");
                     mGbContext = mContext.createPackageContext(GravityBox.PACKAGE_NAME, Context.CONTEXT_IGNORE_SECURITY);
-                    mWindowManager = (WindowManager) XposedHelpers.getObjectField(param.thisObject, "mWindowManager");
+                    mWindowManager = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
                     mPieController = new PieController(mContext, mGbContext);
                     mPieController.attachTo(param.thisObject);
 
@@ -253,11 +265,13 @@ public class ModPieControls {
                 protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                     if (mPieController == null) return;
 
-                    mPieController.setMenuVisibility((Boolean)param.args[0] | mShowMenuItem);
+                    mPieController.setMenuVisibility((Boolean)param.args[0] 
+                            | mShowMenuItem
+                            | mAlwaysShowMenuItem);
                 }
             });
-        } catch (Exception e) {
-            XposedBridge.log(e);
+        } catch (Throwable t) {
+            XposedBridge.log(t);
         }
     }
 
@@ -272,6 +286,8 @@ public class ModPieControls {
                     SETTING_PIE_CONTROLS), false, this);
             resolver.registerContentObserver(Settings.System.getUriFor(
                     SETTING_PIE_GRAVITY), false, this);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    SETTING_PIE_TRIGGER_SIZE), false, this);
         }
 
         @Override
@@ -360,11 +376,14 @@ public class ModPieControls {
 
     private static WindowManager.LayoutParams getPieTriggerLayoutParams(Position position) {
         final Resources res = mContext.getResources();
-        final Resources gbRes = mGbContext.getResources(); 
 
         int width = (int) (res.getDisplayMetrics().widthPixels * 0.8f);
         int height = (int) (res.getDisplayMetrics().heightPixels * 0.8f);
-        int triggerThickness = gbRes.getDimensionPixelSize(R.dimen.pie_trigger_height);
+        int triggerThickness = (int) TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, Settings.System.getInt(
+                        mContext.getContentResolver(), SETTING_PIE_TRIGGER_SIZE, 5), 
+                        res.getDisplayMetrics());
+        if (DEBUG) log("Pie trigger thickness: " + triggerThickness);
         WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
                 (position == Position.TOP || position == Position.BOTTOM
                         ? width : triggerThickness),

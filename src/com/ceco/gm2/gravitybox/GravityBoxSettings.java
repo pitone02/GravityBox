@@ -8,10 +8,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.ceco.gm2.gravitybox.preference.AutoBrightnessDialogPreference;
+import com.ceco.gm2.gravitybox.preference.SeekBarPreference;
+
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.CheckBoxPreference;
-import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.MultiSelectListPreference;
 import android.preference.Preference;
@@ -90,12 +93,20 @@ public class GravityBoxSettings extends Activity {
     public static final String PREF_KEY_FIX_CALENDAR = "pref_fix_calendar";
     public static final String PREF_CAT_KEY_STATUSBAR = "pref_cat_statusbar";
     public static final String PREF_CAT_KEY_STATUSBAR_QS = "pref_cat_statusbar_qs";
-    public static final String PREF_KEY_STATUSBAR_BGCOLOR = "pref_statusbar_bgcolor";
+    public static final String PREF_KEY_STATUSBAR_BGCOLOR = "pref_statusbar_bgcolor2";
     public static final String PREF_KEY_STATUSBAR_ICON_COLOR_ENABLE = "pref_statusbar_icon_color_enable";
     public static final String PREF_KEY_STATUSBAR_ICON_COLOR = "pref_statusbar_icon_color";
     public static final String PREF_KEY_STATUSBAR_DATA_ACTIVITY_COLOR = "pref_statusbar_data_activity_color";
     public static final String PREF_KEY_STATUSBAR_CENTER_CLOCK = "pref_statusbar_center_clock";
     public static final String PREF_KEY_STATUSBAR_CLOCK_DOW = "pref_statusbar_clock_dow";
+    public static final String PREF_KEY_STATUSBAR_CLOCK_AMPM_HIDE = "pref_clock_ampm_hide";
+    public static final String PREF_KEY_STATUSBAR_CLOCK_HIDE = "pref_clock_hide";
+    public static final String PREF_KEY_STATUSBAR_CLOCK_LINK = "pref_clock_link";
+    public static final String PREF_KEY_ALARM_ICON_HIDE = "pref_alarm_icon_hide";
+    public static final String PREF_KEY_TM_STATUSBAR_LAUNCHER = "pref_tm_statusbar_launcher";
+    public static final String PREF_KEY_TM_STATUSBAR_LOCKSCREEN = "pref_tm_statusbar_lockscreen";
+    public static final String PREF_KEY_TM_NAVBAR_LAUNCHER = "pref_tm_navbar_launcher";
+    public static final String PREF_KEY_TM_NAVBAR_LOCKSCREEN = "pref_tm_navbar_lockscreen";
     public static final String PREF_KEY_FIX_TTS_SETTINGS = "pref_fix_tts_settings";
     public static final String PREF_KEY_FIX_DEV_OPTS = "pref_fix_dev_opts";
     public static final String PREF_KEY_ABOUT_GRAVITYBOX = "pref_about_gb";
@@ -109,7 +120,8 @@ public class GravityBoxSettings extends Activity {
     public static final String APP_DUAL_SIM_RINGER = "dualsim.ringer";
     public static final String APP_DUAL_SIM_RINGER_CLASS = "dualsim.ringer.main";
 
-    public static final String PREF_CAT_KEY_LOCKSCREEN_BACCKGROUND = "pref_cat_lockscreen_background";
+    public static final String PREF_CAT_KEY_LOCKSCREEN = "pref_cat_lockscreen";
+    public static final String PREF_CAT_KEY_LOCKSCREEN_BACKGROUND = "pref_cat_lockscreen_background";
     public static final String PREF_KEY_LOCKSCREEN_BACKGROUND = "pref_lockscreen_background";
     public static final String PREF_KEY_LOCKSCREEN_BACKGROUND_COLOR = "pref_lockscreen_bg_color";
     public static final String PREF_KEY_LOCKSCREEN_BACKGROUND_IMAGE = "pref_lockscreen_bg_image";
@@ -124,11 +136,16 @@ public class GravityBoxSettings extends Activity {
     public static final String PREF_KEY_FLASHING_LED_DISABLE = "pref_flashing_led_disable";
     public static final String PREF_KEY_CHARGING_LED_DISABLE = "pref_charging_led_disable";
 
-    public static final String PREF_KEY_BRIGHTNESS_MIN = "pref_brightness_min";
+    public static final String PREF_CAT_KEY_DISPLAY = "pref_cat_display";
+    public static final String PREF_CAT_KEY_BRIGHTNESS = "pref_cat_brightness";
+    public static final String PREF_KEY_BRIGHTNESS_MASTER_SWITCH = "pref_brightness_master_switch";
+    public static final String PREF_KEY_BRIGHTNESS_MIN = "pref_brightness_min2";
+    public static final String PREF_KEY_SCREEN_DIM_LEVEL = "pref_screen_dim_level";
     public static final String PREF_KEY_AUTOBRIGHTNESS = "pref_autobrightness";
     public static final String PREF_KEY_HOLO_BG_SOLID_BLACK = "pref_holo_bg_solid_black";
     public static final String PREF_KEY_HOLO_BG_DITHER = "pref_holo_bg_dither";
 
+    public static final String PREF_CAT_KEY_MEDIA = "pref_cat_media";
     public static final String PREF_KEY_VOL_MUSIC_CONTROLS = "pref_vol_music_controls";
     public static final String PREF_KEY_MUSIC_VOLUME_STEPS = "pref_music_volume_steps";
     public static final String PREF_KEY_SAFE_MEDIA_VOLUME = "pref_safe_media_volume";
@@ -140,8 +157,10 @@ public class GravityBoxSettings extends Activity {
     public static final String EXTRA_LINKED = "linked";
 
     public static final String PREF_KEY_HWKEY_MENU_LONGPRESS = "pref_hwkey_menu_longpress";
+    public static final String PREF_KEY_HWKEY_HOME_LONGPRESS = "pref_hwkey_home_longpress";
     public static final String PREF_KEY_HWKEY_MENU_DOUBLETAP = "pref_hwkey_menu_doubletap";
     public static final String PREF_KEY_HWKEY_BACK_LONGPRESS = "pref_hwkey_back_longpress";
+    public static final String PREF_KEY_HWKEY_CUSTOM_APP = "pref_hwkey_custom_app";
     public static final String PREF_KEY_HWKEY_DOUBLETAP_SPEED = "pref_hwkey_doubletap_speed";
     public static final String PREF_KEY_HWKEY_KILL_DELAY = "pref_hwkey_kill_delay";
     public static final String PREF_KEY_VOLUME_ROCKER_WAKE_DISABLE = "pref_volume_rocker_wake_disable";
@@ -151,10 +170,13 @@ public class GravityBoxSettings extends Activity {
     public static final int HWKEY_ACTION_PREV_APP = 3;
     public static final int HWKEY_ACTION_KILL = 4;
     public static final int HWKEY_ACTION_SLEEP = 5;
+    public static final int HWKEY_ACTION_RECENT_APPS = 6;
+    public static final int HWKEY_ACTION_CUSTOM_APP = 7;
     public static final int HWKEY_DOUBLETAP_SPEED_DEFAULT = 400;
     public static final int HWKEY_KILL_DELAY_DEFAULT = 1000;
     public static final String ACTION_PREF_HWKEY_MENU_LONGPRESS_CHANGED = "gravitybox.intent.action.HWKEY_MENU_LONGPRESS_CHANGED";
     public static final String ACTION_PREF_HWKEY_MENU_DOUBLETAP_CHANGED = "gravitybox.intent.action.HWKEY_MENU_DOUBLETAP_CHANGED";
+    public static final String ACTION_PREF_HWKEY_HOME_LONGPRESS_CHANGED = "gravitybox.intent.action.HWKEY_HOME_LONGPRESS_CHANGED";
     public static final String ACTION_PREF_HWKEY_BACK_LONGPRESS_CHANGED = "gravitybox.intent.action.HWKEY_BACK_LONGPRESS_CHANGED";
     public static final String ACTION_PREF_HWKEY_DOUBLETAP_SPEED_CHANGED = "gravitybox.intent.action.HWKEY_DOUBLETAP_SPEED_CHANGED";
     public static final String ACTION_PREF_HWKEY_KILL_DELAY_CHANGED = "gravitybox.intent.action.HWKEY_KILL_DELAY_CHANGED";
@@ -190,14 +212,18 @@ public class GravityBoxSettings extends Activity {
 
     public static final String PREF_KEY_PIE_CONTROL_ENABLE = "pref_pie_control_enable";
     public static final String PREF_KEY_PIE_CONTROL_SEARCH = "pref_pie_control_search";
+    public static final String PREF_KEY_PIE_CONTROL_MENU = "pref_pie_control_menu";
     public static final String PREF_KEY_PIE_CONTROL_TRIGGERS = "pref_pie_control_trigger_positions";
+    public static final String PREF_KEY_PIE_CONTROL_TRIGGER_SIZE = "pref_pie_control_trigger_size";
     public static final String PREF_KEY_PIE_CONTROL_SIZE = "pref_pie_control_size";
     public static final String PREF_KEY_NAVBAR_DISABLE = "pref_navbar_disable";
     public static final String PREF_KEY_HWKEYS_DISABLE = "pref_hwkeys_disable";
     public static final String ACTION_PREF_PIE_CHANGED = "gravitybox.intent.action.PREF_PIE_CHANGED";
     public static final String EXTRA_PIE_ENABLE = "pieEnable";
     public static final String EXTRA_PIE_SEARCH = "pieSearch";
+    public static final String EXTRA_PIE_MENU = "pieMenu";
     public static final String EXTRA_PIE_TRIGGERS = "pieTriggers";
+    public static final String EXTRA_PIE_TRIGGER_SIZE = "pieTriggerSize";
     public static final String EXTRA_PIE_SIZE = "pieSize";
     public static final String EXTRA_PIE_HWKEYS_DISABLE = "hwKeysDisable";
 
@@ -233,6 +259,10 @@ public class GravityBoxSettings extends Activity {
     public static final String EXTRA_SB_ICON_COLOR_ENABLE = "iconColorEnable";
     public static final String EXTRA_SB_ICON_COLOR = "iconColor";
     public static final String EXTRA_SB_DATA_ACTIVITY_COLOR = "dataActivityColor";
+    public static final String EXTRA_TM_SB_LAUNCHER = "tmSbLauncher";
+    public static final String EXTRA_TM_SB_LOCKSCREEN = "tmSbLockscreen";
+    public static final String EXTRA_TM_NB_LAUNCHER = "tmNbLauncher";
+    public static final String EXTRA_TM_NB_LOCKSCREEN = "tmNbLockscreen";
 
     public static final String ACTION_PREF_QUICKSETTINGS_CHANGED = "gravitybox.intent.action.QUICKSETTINGS_CHANGED";
     public static final String EXTRA_QS_PREFS = "qsPrefs";
@@ -240,10 +270,13 @@ public class GravityBoxSettings extends Activity {
     public static final String EXTRA_QS_AUTOSWITCH = "qsAutoSwitch";
     public static final String EXTRA_QUICK_PULLDOWN = "quickPulldown";
 
-    public static final String ACTION_PREF_CENTER_CLOCK_CHANGED = "gravitybox.intent.action.CENTER_CLOCK_CHANGED";
+    public static final String ACTION_PREF_CLOCK_CHANGED = "gravitybox.intent.action.CENTER_CLOCK_CHANGED";
     public static final String EXTRA_CENTER_CLOCK = "centerClock";
-    public static final String ACTION_PREF_CLOCK_DOW = "gravitybox.intent.action.CLOCK_DOW_CHANGED";
     public static final String EXTRA_CLOCK_DOW = "clockDow";
+    public static final String EXTRA_AMPM_HIDE = "ampmHide";
+    public static final String EXTRA_CLOCK_HIDE = "clockHide";
+    public static final String EXTRA_CLOCK_LINK = "clockLink";
+    public static final String EXTRA_ALARM_HIDE = "alarmHide";
 
     public static final String ACTION_PREF_SAFE_MEDIA_VOLUME_CHANGED = "gravitybox.intent.action.SAFE_MEDIA_VOLUME_CHANGED";
     public static final String EXTRA_SAFE_MEDIA_VOLUME_ENABLED = "enabled";
@@ -261,7 +294,9 @@ public class GravityBoxSettings extends Activity {
             PREF_KEY_MUSIC_VOLUME_STEPS,
             PREF_KEY_HOLO_BG_SOLID_BLACK,
             PREF_KEY_NAVBAR_DISABLE,
-            PREF_KEY_HOLO_BG_DITHER
+            PREF_KEY_HOLO_BG_DITHER,
+            PREF_KEY_SCREEN_DIM_LEVEL,
+            PREF_KEY_BRIGHTNESS_MASTER_SWITCH
     ));
 
     @Override
@@ -299,9 +334,9 @@ public class GravityBoxSettings extends Activity {
         private File wallpaperTemporary;
         private File notifBgImagePortrait;
         private File notifBgImageLandscape;
-        private EditTextPreference mPrefBrightnessMin;
         private ListPreference mPrefHwKeyMenuLongpress;
         private ListPreference mPrefHwKeyMenuDoubletap;
+        private ListPreference mPrefHwKeyHomeLongpress;
         private ListPreference mPrefHwKeyBackLongpress;
         private ListPreference mPrefHwKeyDoubletapSpeed;
         private ListPreference mPrefHwKeyKillDelay;
@@ -310,8 +345,17 @@ public class GravityBoxSettings extends Activity {
         private ColorPickerPreference mPrefSbIconColor;
         private ColorPickerPreference mPrefSbDaColor;
         private PreferenceScreen mPrefCatFixes;
+        private CheckBoxPreference mPrefFixDateTimeCrash;
+        private CheckBoxPreference mPrefFixCallerIDPhone;
+        private CheckBoxPreference mPrefFixCallerIDMms;
+        private CheckBoxPreference mPrefFixMmsWakelock;
+        private CheckBoxPreference mPrefFixCalendar;
+        private CheckBoxPreference mPrefFixTtsSettings;
+        private CheckBoxPreference mPrefFixDevOpts;
         private PreferenceScreen mPrefCatStatusbar;
         private PreferenceScreen mPrefCatStatusbarQs;
+        private CheckBoxPreference mPrefAutoSwitchQs;
+        private ListPreference mPrefQuickPulldown;
         private PreferenceScreen mPrefCatNotifDrawerStyle;
         private ListPreference mPrefNotifBackground;
         private ColorPickerPreference mPrefNotifColor;
@@ -327,6 +371,16 @@ public class GravityBoxSettings extends Activity {
         private ListPreference mPrefRecentClear;
         private PreferenceScreen mPrefCatPhone;
         private CheckBoxPreference mPrefRoamingWarningDisable;
+        private CheckBoxPreference mPrefBrightnessMasterSwitch;
+        private SeekBarPreference mPrefBrightnessMin;
+        private SeekBarPreference mPrefScreenDimLevel;
+        private AutoBrightnessDialogPreference mPrefAutoBrightness;
+        private PreferenceScreen mPrefCatLockscreen;
+        private PreferenceScreen mPrefCatDisplay;
+        private PreferenceScreen mPrefCatBrightness;
+        private CheckBoxPreference mPrefCrtOff;
+        private PreferenceScreen mPrefCatMedia;
+        private CheckBoxPreference mPrefSafeMediaVolume;
 
         @SuppressWarnings("deprecation")
         @Override
@@ -345,7 +399,6 @@ public class GravityBoxSettings extends Activity {
             mSignalIconAutohide = (MultiSelectListPreference) findPreference(PREF_KEY_SIGNAL_ICON_AUTOHIDE);
             mQuickSettings = (MultiSelectListPreference) findPreference(PREF_KEY_QUICK_SETTINGS);
             mStatusbarBgColor = (ColorPickerPreference) findPreference(PREF_KEY_STATUSBAR_BGCOLOR);
-            mStatusbarBgColor.setAlphaSliderEnabled(true);
 
             mPrefAboutGb = (Preference) findPreference(PREF_KEY_ABOUT_GRAVITYBOX);
             
@@ -373,7 +426,7 @@ public class GravityBoxSettings extends Activity {
             }
 
             mPrefCatLockscreenBg = 
-                    (PreferenceCategory) findPreference(PREF_CAT_KEY_LOCKSCREEN_BACCKGROUND);
+                    (PreferenceCategory) findPreference(PREF_CAT_KEY_LOCKSCREEN_BACKGROUND);
             mPrefLockscreenBg = (ListPreference) findPreference(PREF_KEY_LOCKSCREEN_BACKGROUND);
             mPrefLockscreenBgColor = 
                     (ColorPickerPreference) findPreference(PREF_KEY_LOCKSCREEN_BACKGROUND_COLOR);
@@ -385,10 +438,9 @@ public class GravityBoxSettings extends Activity {
             notifBgImagePortrait = new File(getActivity().getFilesDir() + "/notifwallpaper");
             notifBgImageLandscape = new File(getActivity().getFilesDir() + "/notifwallpaper_landscape");
 
-            mPrefBrightnessMin = (EditTextPreference) findPreference(PREF_KEY_BRIGHTNESS_MIN);
-
             mPrefHwKeyMenuLongpress = (ListPreference) findPreference(PREF_KEY_HWKEY_MENU_LONGPRESS);
             mPrefHwKeyMenuDoubletap = (ListPreference) findPreference(PREF_KEY_HWKEY_MENU_DOUBLETAP);
+            mPrefHwKeyHomeLongpress = (ListPreference) findPreference(PREF_KEY_HWKEY_HOME_LONGPRESS);
             mPrefHwKeyBackLongpress = (ListPreference) findPreference(PREF_KEY_HWKEY_BACK_LONGPRESS);
             mPrefHwKeyDoubletapSpeed = (ListPreference) findPreference(PREF_KEY_HWKEY_DOUBLETAP_SPEED);
             mPrefHwKeyKillDelay = (ListPreference) findPreference(PREF_KEY_HWKEY_KILL_DELAY);
@@ -400,8 +452,17 @@ public class GravityBoxSettings extends Activity {
             mPrefSbDaColor = (ColorPickerPreference) findPreference(PREF_KEY_STATUSBAR_DATA_ACTIVITY_COLOR);
 
             mPrefCatFixes = (PreferenceScreen) findPreference(PREF_CAT_KEY_FIXES);
+            mPrefFixDateTimeCrash = (CheckBoxPreference) findPreference(PREF_KEY_FIX_DATETIME_CRASH);
+            mPrefFixCallerIDPhone = (CheckBoxPreference) findPreference(PREF_KEY_FIX_CALLER_ID_PHONE);
+            mPrefFixCallerIDMms = (CheckBoxPreference) findPreference(PREF_KEY_FIX_CALLER_ID_MMS);
+            mPrefFixMmsWakelock = (CheckBoxPreference) findPreference(PREF_KEY_FIX_MMS_WAKELOCK);
+            mPrefFixCalendar = (CheckBoxPreference) findPreference(PREF_KEY_FIX_CALENDAR);
+            mPrefFixTtsSettings = (CheckBoxPreference) findPreference(PREF_KEY_FIX_TTS_SETTINGS);
+            mPrefFixDevOpts = (CheckBoxPreference) findPreference(PREF_KEY_FIX_DEV_OPTS);
             mPrefCatStatusbar = (PreferenceScreen) findPreference(PREF_CAT_KEY_STATUSBAR);
             mPrefCatStatusbarQs = (PreferenceScreen) findPreference(PREF_CAT_KEY_STATUSBAR_QS);
+            mPrefAutoSwitchQs = (CheckBoxPreference) findPreference(PREF_KEY_QUICK_SETTINGS_AUTOSWITCH);
+            mPrefQuickPulldown = (ListPreference) findPreference(PREF_KEY_QUICK_PULLDOWN);
 
             mPrefCatNotifDrawerStyle = (PreferenceScreen) findPreference(PREF_CAT_KEY_NOTIF_DRAWER_STYLE);
             mPrefNotifBackground = (ListPreference) findPreference(PREF_KEY_NOTIF_BACKGROUND);
@@ -426,7 +487,25 @@ public class GravityBoxSettings extends Activity {
             mPrefCatPhone = (PreferenceScreen) findPreference(PREF_CAT_KEY_PHONE);
             mPrefRoamingWarningDisable = (CheckBoxPreference) findPreference(PREF_KEY_ROAMING_WARNING_DISABLE);
 
-            // Remove MTK specific preferences for non-mtk device
+            mPrefBrightnessMasterSwitch = (CheckBoxPreference) findPreference(PREF_KEY_BRIGHTNESS_MASTER_SWITCH);
+            mPrefBrightnessMin = (SeekBarPreference) findPreference(PREF_KEY_BRIGHTNESS_MIN);
+            mPrefScreenDimLevel = (SeekBarPreference) findPreference(PREF_KEY_SCREEN_DIM_LEVEL);
+            mPrefAutoBrightness = (AutoBrightnessDialogPreference) findPreference(PREF_KEY_AUTOBRIGHTNESS);
+
+            mPrefCatLockscreen = (PreferenceScreen) findPreference(PREF_CAT_KEY_LOCKSCREEN);
+            mPrefCatDisplay = (PreferenceScreen) findPreference(PREF_CAT_KEY_DISPLAY);
+            mPrefCatBrightness = (PreferenceScreen) findPreference(PREF_CAT_KEY_BRIGHTNESS);
+            mPrefCrtOff = (CheckBoxPreference) findPreference(PREF_KEY_CRT_OFF_EFFECT);
+            mPrefCatMedia = (PreferenceScreen) findPreference(PREF_CAT_KEY_MEDIA);
+            mPrefSafeMediaVolume = (CheckBoxPreference) findPreference(PREF_KEY_SAFE_MEDIA_VOLUME);
+
+            // Remove Phone specific preferences on Tablet devices
+            if (Utils.isTablet(getActivity())) {
+            	mPrefCatStatusbarQs.removePreference(mPrefAutoSwitchQs);
+            	mPrefCatStatusbarQs.removePreference(mPrefQuickPulldown);
+            }
+
+            // Remove MTK specific preferences for non-MTK devices
             if (!Utils.isMtkDevice()) {
                 getPreferenceScreen().removePreference(mPrefCatFixes);
                 mPrefCatStatusbar.removePreference(mSignalIconAutohide);
@@ -435,8 +514,25 @@ public class GravityBoxSettings extends Activity {
                 mQuickSettings.setEntryValues(R.array.qs_tile_aosp_values);
                 mPrefCatPhone.removePreference(mPrefRoamingWarningDisable);
             } else {
+                // Remove preferences not needed for ZTE V987
+                if (Build.MODEL.contains("V987") && Build.DISPLAY.contains("ZTE-CN-9B18D-P188F04")) {
+                	mPrefCatFixes.removePreference(mPrefFixDateTimeCrash);
+                	mPrefCatFixes.removePreference(mPrefFixTtsSettings);
+                	mPrefCatFixes.removePreference(mPrefFixDevOpts);
+                }
+
                 mQuickSettings.setEntries(R.array.qs_tile_entries);
                 mQuickSettings.setEntryValues(R.array.qs_tile_values);
+            }
+
+            // Remove preferences not compatible with Android 4.1
+            if (Build.VERSION.SDK_INT < 17) {
+                getPreferenceScreen().removePreference(mPrefCatLockscreen);
+                mPrefCatStatusbar.removePreference(mPrefCatStatusbarQs);
+                mPrefCatStatusbar.removePreference(mPrefCatNotifDrawerStyle);
+                mPrefCatDisplay.removePreference(mPrefCatBrightness);
+                mPrefCatDisplay.removePreference(mPrefCrtOff);
+                mPrefCatMedia.removePreference(mPrefSafeMediaVolume);
             }
 
             setDefaultValues();
@@ -523,6 +619,10 @@ public class GravityBoxSettings extends Activity {
                 mPrefHwKeyMenuDoubletap.setSummary(mPrefHwKeyMenuDoubletap.getEntry());
             }
 
+            if (key == null || key.equals(PREF_KEY_HWKEY_HOME_LONGPRESS)) {
+                mPrefHwKeyHomeLongpress.setSummary(mPrefHwKeyHomeLongpress.getEntry());
+            }
+
             if (key == null || key.equals(PREF_KEY_HWKEY_BACK_LONGPRESS)) {
                 mPrefHwKeyBackLongpress.setSummary(mPrefHwKeyBackLongpress.getEntry());
             }
@@ -599,6 +699,13 @@ public class GravityBoxSettings extends Activity {
             if (key == null || key.equals(PREF_KEY_RECENTS_CLEAR_ALL)) {
                 mPrefRecentClear.setSummary(mPrefRecentClear.getEntry());
             }
+
+            if (key == null || key.equals(PREF_KEY_BRIGHTNESS_MASTER_SWITCH)) {
+                final boolean enabled = mPrefBrightnessMasterSwitch.isChecked();
+                mPrefBrightnessMin.setEnabled(enabled);
+                mPrefScreenDimLevel.setEnabled(enabled);
+                mPrefAutoBrightness.setEnabled(enabled);
+            }
         }
 
         @Override
@@ -648,14 +755,39 @@ public class GravityBoxSettings extends Activity {
                 intent.setAction(ACTION_PREF_STATUSBAR_COLOR_CHANGED);
                 intent.putExtra(EXTRA_SB_DATA_ACTIVITY_COLOR,
                         prefs.getInt(PREF_KEY_STATUSBAR_DATA_ACTIVITY_COLOR, Color.WHITE));
+            } else if (key.equals(PREF_KEY_TM_STATUSBAR_LAUNCHER)) {
+                intent.setAction(ACTION_PREF_STATUSBAR_COLOR_CHANGED);
+                intent.putExtra(EXTRA_TM_SB_LAUNCHER, prefs.getInt(PREF_KEY_TM_STATUSBAR_LAUNCHER, 0));
+            } else if (key.equals(PREF_KEY_TM_STATUSBAR_LOCKSCREEN)) {
+                intent.setAction(ACTION_PREF_STATUSBAR_COLOR_CHANGED);
+                intent.putExtra(EXTRA_TM_SB_LOCKSCREEN, prefs.getInt(PREF_KEY_TM_STATUSBAR_LOCKSCREEN, 0));
+            } else if (key.equals(PREF_KEY_TM_NAVBAR_LAUNCHER)) {
+                intent.setAction(ACTION_PREF_STATUSBAR_COLOR_CHANGED);
+                intent.putExtra(EXTRA_TM_NB_LAUNCHER, prefs.getInt(PREF_KEY_TM_NAVBAR_LAUNCHER, 0));
+            } else if (key.equals(PREF_KEY_TM_NAVBAR_LOCKSCREEN)) {
+                intent.setAction(ACTION_PREF_STATUSBAR_COLOR_CHANGED);
+                intent.putExtra(EXTRA_TM_NB_LOCKSCREEN, prefs.getInt(PREF_KEY_TM_NAVBAR_LOCKSCREEN, 0));
             } else if (key.equals(PREF_KEY_STATUSBAR_CENTER_CLOCK)) {
-                intent.setAction(ACTION_PREF_CENTER_CLOCK_CHANGED);
+                intent.setAction(ACTION_PREF_CLOCK_CHANGED);
                 intent.putExtra(EXTRA_CENTER_CLOCK, 
                         prefs.getBoolean(PREF_KEY_STATUSBAR_CENTER_CLOCK, false));
             } else if (key.equals(PREF_KEY_STATUSBAR_CLOCK_DOW)) {
-                intent.setAction(ACTION_PREF_CLOCK_DOW);
+                intent.setAction(ACTION_PREF_CLOCK_CHANGED);
                 intent.putExtra(EXTRA_CLOCK_DOW,
                         prefs.getBoolean(PREF_KEY_STATUSBAR_CLOCK_DOW, false));
+            } else if (key.equals(PREF_KEY_STATUSBAR_CLOCK_AMPM_HIDE)) {
+                intent.setAction(ACTION_PREF_CLOCK_CHANGED);
+                intent.putExtra(EXTRA_AMPM_HIDE, prefs.getBoolean(
+                        PREF_KEY_STATUSBAR_CLOCK_AMPM_HIDE, false));
+            } else if (key.equals(PREF_KEY_STATUSBAR_CLOCK_HIDE)) {
+                intent.setAction(ACTION_PREF_CLOCK_CHANGED);
+                intent.putExtra(EXTRA_CLOCK_HIDE, prefs.getBoolean(PREF_KEY_STATUSBAR_CLOCK_HIDE, false));
+            } else if (key.equals(PREF_KEY_STATUSBAR_CLOCK_LINK)) {
+                intent.setAction(ACTION_PREF_CLOCK_CHANGED);
+                intent.putExtra(EXTRA_CLOCK_LINK, prefs.getBoolean(PREF_KEY_STATUSBAR_CLOCK_LINK, false));
+            } else if (key.equals(PREF_KEY_ALARM_ICON_HIDE)) {
+                intent.setAction(ACTION_PREF_CLOCK_CHANGED);
+                intent.putExtra(EXTRA_ALARM_HIDE, prefs.getBoolean(PREF_KEY_ALARM_ICON_HIDE, false));
             } else if (key.equals(PREF_KEY_SAFE_MEDIA_VOLUME)) {
                 intent.setAction(ACTION_PREF_SAFE_MEDIA_VOLUME_CHANGED);
                 intent.putExtra(EXTRA_SAFE_MEDIA_VOLUME_ENABLED,
@@ -668,6 +800,10 @@ public class GravityBoxSettings extends Activity {
                 intent.setAction(ACTION_PREF_HWKEY_MENU_DOUBLETAP_CHANGED);
                 intent.putExtra(EXTRA_HWKEY_VALUE, Integer.valueOf(
                         prefs.getString(PREF_KEY_HWKEY_MENU_DOUBLETAP, "0")));
+            } else if (key.equals(PREF_KEY_HWKEY_HOME_LONGPRESS)) {
+                intent.setAction(ACTION_PREF_HWKEY_HOME_LONGPRESS_CHANGED);
+                intent.putExtra(EXTRA_HWKEY_VALUE, Integer.valueOf(
+                        prefs.getString(PREF_KEY_HWKEY_HOME_LONGPRESS, "0")));
             } else if (key.equals(PREF_KEY_HWKEY_BACK_LONGPRESS)) {
                 intent.setAction(ACTION_PREF_HWKEY_BACK_LONGPRESS_CHANGED);
                 intent.putExtra(EXTRA_HWKEY_VALUE, Integer.valueOf(
@@ -720,11 +856,18 @@ public class GravityBoxSettings extends Activity {
             } else if (key.equals(PREF_KEY_PIE_CONTROL_SEARCH)) {
                 intent.setAction(ACTION_PREF_PIE_CHANGED);
                 intent.putExtra(EXTRA_PIE_SEARCH, prefs.getBoolean(PREF_KEY_PIE_CONTROL_SEARCH, false));
+            } else if (key.equals(PREF_KEY_PIE_CONTROL_MENU)) {
+                intent.setAction(ACTION_PREF_PIE_CHANGED);
+                intent.putExtra(EXTRA_PIE_MENU, prefs.getBoolean(PREF_KEY_PIE_CONTROL_MENU, false));
             } else if (key.equals(PREF_KEY_PIE_CONTROL_TRIGGERS)) {
                 intent.setAction(ACTION_PREF_PIE_CHANGED);
                 String[] triggers = prefs.getStringSet(
                         PREF_KEY_PIE_CONTROL_TRIGGERS, new HashSet<String>()).toArray(new String[0]);
                 intent.putExtra(EXTRA_PIE_TRIGGERS, triggers);
+            } else if (key.equals(PREF_KEY_PIE_CONTROL_TRIGGER_SIZE)) {
+                intent.setAction(ACTION_PREF_PIE_CHANGED);
+                intent.putExtra(EXTRA_PIE_TRIGGER_SIZE, 
+                        prefs.getInt(PREF_KEY_PIE_CONTROL_TRIGGER_SIZE, 5));
             } else if (key.equals(PREF_KEY_PIE_CONTROL_SIZE)) {
                 intent.setAction(ACTION_PREF_PIE_CHANGED);
                 intent.putExtra(EXTRA_PIE_SIZE, prefs.getInt(PREF_KEY_PIE_CONTROL_SIZE, 1000));
@@ -776,27 +919,6 @@ public class GravityBoxSettings extends Activity {
                 });
                 mDialog = builder.create();
                 mDialog.show();
-            }
-
-            if (key.equals(PREF_KEY_BRIGHTNESS_MIN)) {
-                String strVal = prefs.getString(PREF_KEY_BRIGHTNESS_MIN, "20");
-                try {
-                    int val = Integer.valueOf(strVal);
-                    int newVal = val;
-                    if (val < 10) newVal = 10;
-                    if (val > 80) newVal = 80;
-                    if (val != newVal) {
-                        Editor editor = prefs.edit();
-                        editor.putString(PREF_KEY_BRIGHTNESS_MIN, String.valueOf(newVal));
-                        editor.commit();
-                        mPrefBrightnessMin.setText(String.valueOf(newVal));
-                    }
-                } catch (NumberFormatException e) {
-                    Editor editor = prefs.edit();
-                    editor.putString(PREF_KEY_BRIGHTNESS_MIN, "20");
-                    editor.commit();
-                    mPrefBrightnessMin.setText("20");
-                }
             }
 
             if (rebootKeys.contains(key))

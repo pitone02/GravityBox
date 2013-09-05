@@ -15,6 +15,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Resources;
+import android.os.Build;
+import android.provider.Settings;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.format.DateFormat;
@@ -32,11 +34,14 @@ public class ModCenterClock {
     private static final String TAG = "ModCenterClock";
     private static final String CLASS_PHONE_STATUSBAR = "com.android.systemui.statusbar.phone.PhoneStatusBar";
     private static final String CLASS_TICKER = "com.android.systemui.statusbar.phone.PhoneStatusBar$MyTicker";
+    private static final String CLASS_PHONE_STATUSBAR_POLICY = "com.android.systemui.statusbar.phone.PhoneStatusBarPolicy";
+    private static final boolean DEBUG = false;
 
     private static ViewGroup mIconArea;
     private static ViewGroup mRootView;
     private static LinearLayout mLayoutClock;
     private static TextView mClock;
+    private static TextView mClockExpanded;
     private static Object mPhoneStatusBar;
     private static Context mContext;
     private static int mAnimPushUpOut;
@@ -45,6 +50,11 @@ public class ModCenterClock {
     private static boolean mClockCentered = false;
     private static int mClockOriginalPaddingLeft;
     private static boolean mClockShowDow = false;
+    private static boolean mAmPmHide = false;
+    private static boolean mClockHide = false;
+    private static boolean mClockLink = false;
+    private static boolean mAlarmHide = false;
+    private static Object mPhoneStatusBarPolicy;
 
     private static void log(String message) {
         XposedBridge.log(TAG + ": " + message);
@@ -55,12 +65,43 @@ public class ModCenterClock {
         @Override
         public void onReceive(Context context, Intent intent) {
             log("Broadcast received: " + intent.toString());
-            if (intent.getAction().equals(GravityBoxSettings.ACTION_PREF_CENTER_CLOCK_CHANGED)) {
-                setClockPosition(intent.getBooleanExtra(GravityBoxSettings.EXTRA_CENTER_CLOCK, false));
-            } else if (intent.getAction().equals(GravityBoxSettings.ACTION_PREF_CLOCK_DOW)) {
-                mClockShowDow = intent.getBooleanExtra(GravityBoxSettings.EXTRA_CLOCK_DOW, false);
-                if (mClock != null) {
-                    XposedHelpers.callMethod(mClock, "updateClock");
+            if (intent.getAction().equals(GravityBoxSettings.ACTION_PREF_CLOCK_CHANGED)) {
+                if (intent.hasExtra(GravityBoxSettings.EXTRA_CENTER_CLOCK)) {
+                    setClockPosition(intent.getBooleanExtra(GravityBoxSettings.EXTRA_CENTER_CLOCK, false));
+                }
+                if (intent.hasExtra(GravityBoxSettings.EXTRA_CLOCK_DOW)) {
+                    mClockShowDow = intent.getBooleanExtra(GravityBoxSettings.EXTRA_CLOCK_DOW, false);
+                    if (mClock != null) {
+                        XposedHelpers.callMethod(mClock, "updateClock");
+                    }
+                }
+                if (intent.hasExtra(GravityBoxSettings.EXTRA_AMPM_HIDE)) {
+                    mAmPmHide = intent.getBooleanExtra(GravityBoxSettings.EXTRA_AMPM_HIDE, false);
+                    if (mClock != null) {
+                        XposedHelpers.callMethod(mClock, "updateClock");
+                    }
+                    if (mClockExpanded != null) {
+                        XposedHelpers.callMethod(mClockExpanded, "updateClock");
+                    }
+                }
+                if (intent.hasExtra(GravityBoxSettings.EXTRA_CLOCK_HIDE)) {
+                    mClockHide = intent.getBooleanExtra(GravityBoxSettings.EXTRA_CLOCK_HIDE, false);
+                    if (mClock != null) {
+                        mClock.setVisibility(mClockHide ? View.GONE : View.VISIBLE);
+                    }
+                }
+                if (intent.hasExtra(GravityBoxSettings.EXTRA_CLOCK_LINK)) {
+                    mClockLink = intent.getBooleanExtra(GravityBoxSettings.EXTRA_CLOCK_LINK, false);
+                }
+                if (intent.hasExtra(GravityBoxSettings.EXTRA_ALARM_HIDE)) {
+                    mAlarmHide = intent.getBooleanExtra(GravityBoxSettings.EXTRA_ALARM_HIDE, false);
+                    if (mPhoneStatusBarPolicy != null) {
+                        String alarmFormatted = Settings.System.getString(context.getContentResolver(),
+                                Settings.System.NEXT_ALARM_FORMATTED);
+                        Intent i = new Intent();
+                        i.putExtra("alarmSet", (alarmFormatted != null && !alarmFormatted.isEmpty()));
+                        XposedHelpers.callMethod(mPhoneStatusBarPolicy, "updateAlarm", i);
+                    }
                 }
             }
         }
@@ -68,21 +109,30 @@ public class ModCenterClock {
 
     public static void initResources(final XSharedPreferences prefs, final InitPackageResourcesParam resparam) {
         try {
-            String layout = Utils.isMtkDevice() ? "gemini_super_status_bar" : "super_status_bar";
+            String layout = Utils.hasGeminiSupport() ? "gemini_super_status_bar" : "super_status_bar";
             resparam.res.hookLayout(PACKAGE_NAME, "layout", layout, new XC_LayoutInflated() {
 
                 @Override
                 public void handleLayoutInflated(LayoutInflatedParam liparam) throws Throwable {
                     prefs.reload();
                     mClockShowDow = prefs.getBoolean(GravityBoxSettings.PREF_KEY_STATUSBAR_CLOCK_DOW, false);
-                    
+                    mAmPmHide = prefs.getBoolean(GravityBoxSettings.PREF_KEY_STATUSBAR_CLOCK_AMPM_HIDE, false);
+                    mClockHide = prefs.getBoolean(GravityBoxSettings.PREF_KEY_STATUSBAR_CLOCK_HIDE, false);
+                    mClockLink = prefs.getBoolean(GravityBoxSettings.PREF_KEY_STATUSBAR_CLOCK_LINK, false);
+                    mAlarmHide = prefs.getBoolean(GravityBoxSettings.PREF_KEY_ALARM_ICON_HIDE, false);
+
+                    String iconAreaId = Build.VERSION.SDK_INT > 16 ?
+                            "system_icon_area" : "icons";
                     mIconArea = (ViewGroup) liparam.view.findViewById(
-                            liparam.res.getIdentifier("system_icon_area", "id", PACKAGE_NAME));
+                            liparam.res.getIdentifier(iconAreaId, "id", PACKAGE_NAME));
                     if (mIconArea == null) return;
 
-                    mRootView = (ViewGroup) mIconArea.getParent().getParent();
+                    mRootView = Build.VERSION.SDK_INT > 16 ?
+                            (ViewGroup) mIconArea.getParent().getParent() :
+                            (ViewGroup) mIconArea.getParent();
                     if (mRootView == null) return;
 
+                    // find statusbar clock
                     mClock = (TextView) mIconArea.findViewById(
                             liparam.res.getIdentifier("clock", "id", PACKAGE_NAME));
                     if (mClock == null) return;
@@ -90,7 +140,29 @@ public class ModCenterClock {
                     // use this additional field to identify the instance of Clock that resides in status bar
                     XposedHelpers.setAdditionalInstanceField(mClock, "sbClock", true);
                     mClockOriginalPaddingLeft = mClock.getPaddingLeft();
+                    if (mClockHide) {
+                        mClock.setVisibility(View.GONE);
+                    }
 
+                    // find notification panel clock
+                    String panelHolderId = Build.VERSION.SDK_INT > 16 ?
+                            "panel_holder" : "notification_panel";
+                    final ViewGroup panelHolder = (ViewGroup) liparam.view.findViewById(
+                            liparam.res.getIdentifier(panelHolderId, "id", PACKAGE_NAME));
+                    if (panelHolder != null) {
+                        mClockExpanded = (TextView) panelHolder.findViewById(
+                                liparam.res.getIdentifier("clock", "id", PACKAGE_NAME));
+                        if (mClockExpanded != null && Build.VERSION.SDK_INT < 17) {
+                            mClockExpanded.setClickable(true);
+                            mClockExpanded.setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    launchDeskClock();
+                                }
+                            });
+                        }
+                    }
+                    
                     // inject new clock layout
                     mLayoutClock = new LinearLayout(liparam.view.getContext());
                     mLayoutClock.setLayoutParams(new LinearLayout.LayoutParams(
@@ -105,36 +177,48 @@ public class ModCenterClock {
                         protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                             // is this a status bar Clock instance?
                             // yes, if it contains our additional sbClock field
+                            if (DEBUG) log("getSmallTime() called. mAmPmHide=" + mAmPmHide);
                             Object sbClock = XposedHelpers.getAdditionalInstanceField(param.thisObject, "sbClock");
-                            if (sbClock != null) {
-                                Calendar calendar = Calendar.getInstance(TimeZone.getDefault());
-                                String clockText = param.getResult().toString();
-                                String amPm = calendar.getDisplayName(
-                                        Calendar.AM_PM, Calendar.SHORT, Locale.getDefault());
-                                int amPmIndex = clockText.indexOf(amPm);
+                            if (DEBUG) log("Is statusbar clock: " + (sbClock == null ? "false" : "true"));
+                            Calendar calendar = Calendar.getInstance(TimeZone.getDefault());
+                            String clockText = param.getResult().toString();
+                            if (DEBUG) log("Original clockText: '" + clockText + "'");
+                            String amPm = calendar.getDisplayName(
+                                    Calendar.AM_PM, Calendar.SHORT, Locale.getDefault());
+                            if (DEBUG) log("Locale specific AM/PM string: '" + amPm + "'");
+                            int amPmIndex = clockText.indexOf(amPm);
+                            if (DEBUG) log("Original AM/PM index: " + amPmIndex);
+                            if (mAmPmHide && amPmIndex != -1) {
+                                clockText = clockText.replace(amPm, "").trim();
+                                if (DEBUG) log("AM/PM removed. New clockText: '" + clockText + "'");
+                                amPmIndex = -1;
+                            } else if (!mAmPmHide 
+                                        && !DateFormat.is24HourFormat(mClock.getContext()) 
+                                        && amPmIndex == -1) {
                                 // insert AM/PM if missing
-                                if (!DateFormat.is24HourFormat(mClock.getContext()) && amPmIndex == -1) {
-                                    clockText += " " + amPm;
-                                    amPmIndex = clockText.indexOf(amPm);
-                                }
-                                CharSequence dow = "";
-                                if (mClockShowDow) {
-                                    dow = calendar.getDisplayName(
-                                            Calendar.DAY_OF_WEEK, Calendar.SHORT, Locale.getDefault()) + " ";
-                                }
-                                clockText = dow + clockText;
-                                SpannableStringBuilder sb = new SpannableStringBuilder(clockText);
-                                sb.setSpan(new RelativeSizeSpan(0.7f), 0, dow.length(), 
-                                        Spannable.SPAN_EXCLUSIVE_INCLUSIVE);
-                                if (amPmIndex > -1) {
-                                    int offset = Character.isWhitespace(clockText.charAt(dow.length() + amPmIndex - 1)) ?
-                                            1 : 0;
-                                    sb.setSpan(new RelativeSizeSpan(0.7f), dow.length() + amPmIndex - offset, 
-                                            dow.length() + amPmIndex + amPm.length(), 
-                                            Spannable.SPAN_EXCLUSIVE_INCLUSIVE);
-                                }
-                                param.setResult(sb);
+                                clockText += " " + amPm;
+                                amPmIndex = clockText.indexOf(amPm);
+                                if (DEBUG) log("AM/PM added. New clockText: '" + clockText + "'; New AM/PM index: " + amPmIndex);
                             }
+                            CharSequence dow = "";
+                            // apply day of week only to statusbar clock, not the notification panel clock
+                            if (mClockShowDow && sbClock != null) {
+                                dow = calendar.getDisplayName(
+                                        Calendar.DAY_OF_WEEK, Calendar.SHORT, Locale.getDefault()) + " ";
+                            }
+                            clockText = dow + clockText;
+                            SpannableStringBuilder sb = new SpannableStringBuilder(clockText);
+                            sb.setSpan(new RelativeSizeSpan(0.7f), 0, dow.length(), 
+                                    Spannable.SPAN_EXCLUSIVE_INCLUSIVE);
+                            if (amPmIndex > -1) {
+                                int offset = Character.isWhitespace(clockText.charAt(dow.length() + amPmIndex - 1)) ?
+                                        1 : 0;
+                                sb.setSpan(new RelativeSizeSpan(0.7f), dow.length() + amPmIndex - offset, 
+                                        dow.length() + amPmIndex + amPm.length(), 
+                                        Spannable.SPAN_EXCLUSIVE_INCLUSIVE);
+                            }
+                            if (DEBUG) log("Final clockText: '" + sb + "'");
+                            param.setResult(sb);
                         }
                     });
 
@@ -142,8 +226,8 @@ public class ModCenterClock {
                             GravityBoxSettings.PREF_KEY_STATUSBAR_CENTER_CLOCK, false));
                 }
             });
-        } catch (Exception e) {
-            XposedBridge.log(e);
+        } catch (Throwable t) {
+            XposedBridge.log(t);
         }
     }
 
@@ -153,10 +237,32 @@ public class ModCenterClock {
                     XposedHelpers.findClass(CLASS_PHONE_STATUSBAR, classLoader);
             final Class<?> tickerClass =
                     XposedHelpers.findClass(CLASS_TICKER, classLoader);
+            final Class<?> phoneStatusBarPolicyClass = 
+                    XposedHelpers.findClass(CLASS_PHONE_STATUSBAR_POLICY, classLoader);
 
             final Class<?>[] loadAnimParamArgs = new Class<?>[2];
             loadAnimParamArgs[0] = int.class;
             loadAnimParamArgs[1] = Animation.AnimationListener.class;
+
+            XposedBridge.hookAllConstructors(phoneStatusBarPolicyClass, new XC_MethodHook() {
+                @Override
+                protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                    mPhoneStatusBarPolicy = param.thisObject;
+                }
+            });
+
+            XposedHelpers.findAndHookMethod(phoneStatusBarPolicyClass, 
+                    "updateAlarm", Intent.class, new XC_MethodHook() {
+                @Override
+                protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                    Object sbService = XposedHelpers.getObjectField(param.thisObject, "mService");
+                    if (sbService != null) {
+                        boolean alarmSet = ((Intent)param.args[0]).getBooleanExtra("alarmSet", false);
+                        XposedHelpers.callMethod(sbService, "setIconVisibility", "alarm_clock",
+                                (alarmSet && !mAlarmHide));
+                    }
+                }
+            });
 
             XposedHelpers.findAndHookMethod(phoneStatusBarClass, "makeStatusBarView", new XC_MethodHook() {
 
@@ -170,11 +276,39 @@ public class ModCenterClock {
                     mAnimFadeIn = res.getIdentifier("fade_in", "anim", "android");
 
                     IntentFilter intentFilter = new IntentFilter();
-                    intentFilter.addAction(GravityBoxSettings.ACTION_PREF_CENTER_CLOCK_CHANGED);
-                    intentFilter.addAction(GravityBoxSettings.ACTION_PREF_CLOCK_DOW);
+                    intentFilter.addAction(GravityBoxSettings.ACTION_PREF_CLOCK_CHANGED);
                     mContext.registerReceiver(mBroadcastReceiver, intentFilter);
                 }
             });
+
+            XposedHelpers.findAndHookMethod(phoneStatusBarClass, "showClock", boolean.class, new XC_MethodHook() {
+                @Override
+                protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                    if (mClock == null) return;
+
+                    boolean visible = (Boolean) param.args[0] && !mClockHide;
+                    mClock.setVisibility(visible ? View.VISIBLE : View.GONE);
+                }
+            });
+
+            if (Build.VERSION.SDK_INT > 16) {
+                XposedHelpers.findAndHookMethod(phoneStatusBarClass, "startActivityDismissingKeyguard", 
+                        Intent.class, boolean.class, new XC_MethodHook() {
+                    @Override
+                    protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                        if (!mClockLink) return;
+
+                        Intent i = (Intent) param.args[0];
+                        if (i == null || i.getAction() == null) return;
+
+                        if (i.getAction().equals(Intent.ACTION_QUICK_CLOCK)) {
+                            i.setAction(Intent.ACTION_MAIN);
+                            i.addCategory(Intent.CATEGORY_LAUNCHER);
+                            i.setPackage("com.android.deskclock");
+                        }
+                    }
+                });
+            }
 
             XposedHelpers.findAndHookMethod(tickerClass, "tickerStarting", new XC_MethodHook() {
 
@@ -215,8 +349,8 @@ public class ModCenterClock {
                 }
             });
         }
-        catch (Exception e) {
-            XposedBridge.log(e);
+        catch (Throwable t) {
+            XposedBridge.log(t);
         }
     }
 
@@ -247,5 +381,23 @@ public class ModCenterClock {
         }
 
         mClockCentered = center;
+    }
+
+    private static void launchDeskClock() {
+        if (mContext == null || !mClockLink) return;
+
+        try {
+            Intent i = new Intent(Intent.ACTION_MAIN);
+            i.addCategory(Intent.CATEGORY_LAUNCHER);
+            i.setPackage("com.android.deskclock");
+            i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            mContext.startActivity(i);
+            if (mPhoneStatusBar != null) {
+                XposedHelpers.callMethod(mPhoneStatusBar, Build.VERSION.SDK_INT > 16 ?
+                        "animateCollapsePanels" : "animateCollapse");
+            }
+        } catch (Throwable t) {
+            log(t.getMessage());
+        }
     }
 }

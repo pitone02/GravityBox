@@ -1,13 +1,12 @@
 package com.ceco.gm2.gravitybox;
 
+import de.robv.android.xposed.XposedBridge;
 import android.content.Context;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
-import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Build;
 import android.util.DisplayMetrics;
 import android.view.WindowManager;
+import static de.robv.android.xposed.XposedHelpers.callStaticMethod;
+import static de.robv.android.xposed.XposedHelpers.findClass;
 
 public class Utils {
 
@@ -18,6 +17,7 @@ public class Utils {
 
     // Device type reference
     private static int mDeviceType = -1;
+    private static Boolean mHasGeminiSupport = null;
 
     private static int getScreenType(Context con) {
         if (mDeviceType == -1) {
@@ -59,6 +59,24 @@ public class Utils {
     }
 
     public static boolean isMtkDevice() {
-        return (Build.HARDWARE.toLowerCase().contains("mt6589") || Build.HARDWARE.toLowerCase().contains("mt8389"));
+        return (Build.HARDWARE.toLowerCase().contains("mt6575")
+                || Build.HARDWARE.toLowerCase().contains("mt6577")
+                || Build.HARDWARE.toLowerCase().contains("mt6589") 
+                || Build.HARDWARE.toLowerCase().contains("mt8389"));
+    }
+
+    public static boolean hasGeminiSupport() {
+        if (mHasGeminiSupport != null) return mHasGeminiSupport;
+
+        try {
+            Class<?> classSystemProperties = findClass("android.os.SystemProperties", null);
+            String geminiSupport = (String) callStaticMethod(classSystemProperties, 
+                    "get", "ro.mediatek.gemini_support");
+            mHasGeminiSupport = "true".equals(geminiSupport);
+            return mHasGeminiSupport;
+        } catch (Throwable t) {
+            XposedBridge.log("Utils: hasGeminiSupport check failed. Assuming device has no Gemini support");
+            return false;
+        }
     }
 }
