@@ -444,5 +444,38 @@
     <!-- Screen dim level -->
     <string name="pref_screen_dim_level_title">Modalità attenuazione luminosità</string>
     <string name="pref_screen_dim_level_summary">Imposta luminosità per attenuazione schermo - quando lo schermo sta per spegnersi (necessita riavvio)</string>
+    
+    <!-- Device type -->
+    <string name="device_phone">telefono</string>
+    <string name="device_tablet">tablet</string>
+
+    <!-- Brightness preference category -->
+    <string name="pref_cat_brightness_title">Impostazioni luminosità</string>
+    <string name="pref_brightness_master_switch_title">Abilita impostazioni luminosità</string>
+    <string name="pref_brightness_master_switch_summary">Usare solo nel caso in cui il proprio terminale supporti le impostazioni di luminosità standard di Android. Lascia disattivato se riscontri problemi con impostazione attivata. (richiede riavvio)</string>
+
+    <!-- HW Key Action: Recent apps -->
+    <string name="hwkey_action_recent_apps">Mostra applicazioni recenti</string>
+
+    <!-- HW Key Action: Home long-press -->
+    <string name="pref_hwkey_home_longpress_title">Azione per pressione prolungata tasto Home</string>
+
+    <!-- HW Key Action: Launch cutom app -->
+    <string name="hwkey_action_custom_app">Avvia applicazione specifica</string>
+    <string name="pref_hwkey_custom_app_title">Imposta applicazione specifica</string>
+    <string name="hwkey_action_custom_app_none">Nessuna applicazione assegnata!</string>
+    <string name="hwkey_action_custom_app_missing">Applicazione specifica non trovata!</string>
+
+    <!-- Link notification panel clock to Deskclock -->
+    <string name="pref_clock_link_title">Collegamento ad app Orologio</string>
+    <string name="pref_clock_link_summary">Collega l\'orologio del pannello notifiche all\'applicazione Orologio al posto dell\'app Impostazioni data&amp;ora</string>
+
+    <!-- GravityBox settings startup handling -->
+    <string name="gb_startup_progress">In attesa di risposta dal modulo GravityBox&#8230;</string>
+    <string name="gb_startup_error">Il modulo GravityBox non risponde, Chiusura in corso.</string>
+
+    <!-- National data roaming -->
+    <string name="pref_national_roaming_title">Roaming dati in territorio nazionale</string>
+    <string name="pref_national_roaming_summary">Collegati al servizio dati in roaming nazionale</string>
 
 </resources>
